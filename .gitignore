@@ -141,3 +141,12 @@ yarn-error.log*
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+.env
+
+# Runtime artifacts (start/stop scripts)
+*.db
+.run/
+
+# Agent tooling local dependencies
+.opencode/node_modules/
