@@ -1,0 +1,12 @@
+All documents in this directory are legal agreement templates published by
+Common Paper (https://github.com/CommonPaper).
+
+Common Paper agreements are free to use and modify under the Creative Commons
+Attribution 4.0 International license (CC BY 4.0):
+https://creativecommons.org/licenses/by/4.0/
+
+SPDX-License-Identifier: CC-BY-4.0
+
+When using or modifying these templates, you must give appropriate credit to
+Common Paper, provide a link to the license, and indicate if changes were made,
+as required by CC BY 4.0.
