@@ -2,17 +2,35 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { fetchTemplate } from "@/lib/api";
 import Home from "@/app/page";
+import {
+  MNDA_COVERPAGE_MARKDOWN,
+  MNDA_STANDARD_TERMS_MARKDOWN,
+} from "../fixtures/templates";
 
-function setup() {
+vi.mock("@/lib/api", () => ({
+  fetchTemplate: vi.fn(async (filename: string) => ({
+    name: filename,
+    description: "",
+    filename,
+    content:
+      filename.endsWith("coverpage.md")
+        ? MNDA_COVERPAGE_MARKDOWN
+        : MNDA_STANDARD_TERMS_MARKDOWN,
+  })),
+}));
+
+async function setup() {
   const user = userEvent.setup();
   const view = render(<Home />);
-  return { user, ...view };
+  const preview = await screen.findByRole("article");
+  return { user, preview, ...view };
 }
 
 describe("Mutual NDA creator page", () => {
-  it("renders the app header and download action", () => {
-    setup();
+  it("renders the app header and download action", async () => {
+    await setup();
 
     expect(screen.getByText("Prelegal")).toBeInTheDocument();
     expect(
@@ -20,8 +38,8 @@ describe("Mutual NDA creator page", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the form and preview side by side", () => {
-    setup();
+  it("renders the form and preview side by side", async () => {
+    await setup();
 
     expect(
       screen.getByLabelText(/Party 1 Company Name/i),
@@ -31,10 +49,35 @@ describe("Mutual NDA creator page", () => {
     ).toBeInTheDocument();
   });
 
+  it("loads standard terms content served by the backend into the preview", async () => {
+    await setup();
+
+    const listItems = screen.getAllByRole("listitem");
+    expect(listItems.length).toBeGreaterThanOrEqual(11);
+    expect(within(listItems[0]).getByText("Introduction")).toBeInTheDocument();
+  });
+
+  it("shows an error state with retry when template loading fails", async () => {
+    vi.mocked(fetchTemplate).mockRejectedValueOnce(new Error("backend down"));
+
+    render(<Home />);
+
+    expect(
+      await screen.findByText(/Unable to load template content\./),
+    ).toBeInTheDocument();
+
+    vi.mocked(fetchTemplate).mockRejectedValueOnce(new Error("still down"));
+    await userEvent.click(screen.getByRole("button", { name: /Retry/i }));
+
+    expect(
+      await screen.findByText(/Unable to load template content\./),
+    ).toBeInTheDocument();
+  });
+
   it("triggers the browser print dialog for PDF download", async () => {
     const printSpy = vi.fn();
     window.print = printSpy;
-    const { user } = setup();
+    const { user } = await setup();
 
     await user.click(screen.getByRole("button", { name: /Download PDF/i }));
 
@@ -42,12 +85,12 @@ describe("Mutual NDA creator page", () => {
   });
 
   it("reflects typed party names into the document signature block", async () => {
-    const { user } = setup();
+    const { user, preview } = await setup();
 
     await user.type(screen.getByLabelText(/Party 1 Company Name/i), "Acme Corp");
     await user.type(screen.getByLabelText(/Party 2 Company Name/i), "Globex LLC");
 
-    const table = screen.getByRole("table");
+    const table = within(preview).getByRole("table");
     const companyRow = within(table)
       .getAllByRole("row")
       .find((row) => within(row).queryByText("Company") !== null);
@@ -60,8 +103,7 @@ describe("Mutual NDA creator page", () => {
   });
 
   it("updates the MNDA term in the preview when the radio changes", async () => {
-    const { user } = setup();
-    const preview = screen.getByRole("article");
+    const { user, preview } = await setup();
 
     expect(within(preview).getByText(/Expires 1 year from Effective Date\./))
       .toBeInTheDocument();
@@ -79,8 +121,7 @@ describe("Mutual NDA creator page", () => {
   });
 
   it("updates confidentiality language when perpetuity is selected", async () => {
-    const { user } = setup();
-    const preview = screen.getByRole("article");
+    const { user, preview } = await setup();
 
     await user.click(screen.getByRole("radio", { name: /In perpetuity/i }));
 
@@ -91,8 +132,7 @@ describe("Mutual NDA creator page", () => {
   });
 
   it("formats the effective date live as the user picks one", async () => {
-    const { user } = setup();
-    const preview = screen.getByRole("article");
+    const { user, preview } = await setup();
 
     expect(within(preview).getByText("[Today's date]")).toBeInTheDocument();
 
@@ -104,9 +144,8 @@ describe("Mutual NDA creator page", () => {
     expect(within(preview).getByText(/December \d+, 2026/)).toBeInTheDocument();
   });
 
-  it("keeps placeholders visible until fields are filled", () => {
-    setup();
-    const preview = screen.getByRole("article");
+  it("keeps placeholders visible until fields are filled", async () => {
+    const { preview } = await setup();
 
     expect(within(preview).getByText("[Party 1]")).toBeInTheDocument();
     expect(

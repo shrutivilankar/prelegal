@@ -6,10 +6,27 @@ import DocumentPreview from "@/components/DocumentPreview";
 import {
   CC_BY_40_URL,
   MNDA_VERSION_URL,
-  STANDARD_TERMS,
   defaultNdaFormData,
 } from "@/lib/mnda";
 import type { NdaFormData } from "@/lib/mnda";
+import { parseCoverPageIntro, parseStandardTerms } from "@/lib/template-parser";
+import {
+  MNDA_COVERPAGE_MARKDOWN,
+  MNDA_STANDARD_TERMS_MARKDOWN,
+} from "../fixtures/templates";
+
+const coverPageIntro = parseCoverPageIntro(MNDA_COVERPAGE_MARKDOWN);
+const standardTerms = parseStandardTerms(MNDA_STANDARD_TERMS_MARKDOWN);
+
+function renderPreview(data: NdaFormData = defaultNdaFormData) {
+  return render(
+    <DocumentPreview
+      data={data}
+      coverPageIntro={coverPageIntro}
+      standardTerms={standardTerms}
+    />,
+  );
+}
 
 const filledData: NdaFormData = {
   party1Name: "Acme Corp",
@@ -27,7 +44,7 @@ const filledData: NdaFormData = {
 
 describe("DocumentPreview", () => {
   it("renders the document title", () => {
-    render(<DocumentPreview data={defaultNdaFormData} />);
+    renderPreview();
 
     expect(
       screen.getByRole("heading", {
@@ -38,7 +55,7 @@ describe("DocumentPreview", () => {
 
   describe("with fully filled data", () => {
     beforeEach(() => {
-      render(<DocumentPreview data={filledData} />);
+      renderPreview(filledData);
     });
 
     it("shows both company names in the signature block", () => {
@@ -90,18 +107,28 @@ describe("DocumentPreview", () => {
       const list = screen.getByRole("list");
       const items = within(list).getAllByRole("listitem");
 
-      expect(items).toHaveLength(STANDARD_TERMS.length);
-      STANDARD_TERMS.forEach((section, index) => {
+      expect(items).toHaveLength(standardTerms.length);
+      standardTerms.forEach((section, index) => {
         expect(
           within(items[index]).getByText(section.heading),
         ).toBeInTheDocument();
       });
     });
+
+    it("renders the cover page intro fetched from the backend", () => {
+      const intro = screen.getByText((_, element) =>
+        Boolean(
+          element?.tagName === "P" &&
+            element.textContent?.startsWith("This Mutual Non-Disclosure Agreement"),
+        ),
+      );
+      expect(intro.textContent).toContain("Standard Terms Version 1.0");
+    });
   });
 
   describe("with empty defaults", () => {
     beforeEach(() => {
-      render(<DocumentPreview data={defaultNdaFormData} />);
+      renderPreview();
     });
 
     it.each([
@@ -124,14 +151,11 @@ describe("DocumentPreview", () => {
     });
 
     it("falls back to [fill in] when term years are invalid", () => {
-      const { container } = render(
-        <DocumentPreview
-          data={{
-            ...defaultNdaFormData,
-            mndaTermYears: "not-a-number",
-            confidentialityYears: "-2",
-          }}
-        />);
+      const { container } = renderPreview({
+        ...defaultNdaFormData,
+        mndaTermYears: "not-a-number",
+        confidentialityYears: "-2",
+      });
 
       const headings = Array.from(container.querySelectorAll("h3"));
       const paragraphAfter = (name: string) =>
@@ -148,7 +172,7 @@ describe("DocumentPreview", () => {
 
   describe("attribution", () => {
     it("links the Common Paper version and the CC BY 4.0 license twice", () => {
-      render(<DocumentPreview data={defaultNdaFormData} />);
+      renderPreview();
 
       const versionLinks = screen.getAllByRole("link", {
         name: new RegExp(`Version`, "i"),
@@ -165,9 +189,7 @@ describe("DocumentPreview", () => {
 
   describe("rich text rendering", () => {
     it("converts **bold** markers into strong elements", () => {
-      const { container } = render(
-        <DocumentPreview data={defaultNdaFormData} />,
-      );
+      const { container } = renderPreview();
 
       const strongs = Array.from(container.querySelectorAll("strong"));
       const strongTexts = strongs.map((el) => el.textContent);
@@ -177,9 +199,7 @@ describe("DocumentPreview", () => {
     });
 
     it("never leaks raw ** markers into the rendered text", () => {
-      const { container } = render(
-        <DocumentPreview data={defaultNdaFormData} />,
-      );
+      const { container } = renderPreview();
 
       expect(container.textContent).not.toContain("**");
     });
@@ -187,7 +207,7 @@ describe("DocumentPreview", () => {
 
   describe("signature block structure", () => {
     it("contains all six signature rows for both parties", () => {
-      render(<DocumentPreview data={defaultNdaFormData} />);
+      renderPreview();
 
       const table = screen.getByRole("table");
       const labels = [

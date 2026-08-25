@@ -1,15 +1,19 @@
-import type { NdaFormData } from "@/lib/mnda";
+import type { NdaFormData, StandardTermsSection } from "@/lib/mnda";
 import {
   CC_BY_40_URL,
-  COVER_PAGE_INTRO,
   MNDA_VERSION,
   MNDA_VERSION_URL,
-  STANDARD_TERMS,
   displayValue,
   formatConfidentialityTerm,
   formatMndaTerm,
   formatDate,
 } from "@/lib/mnda";
+
+export interface DocumentPreviewProps {
+  data: NdaFormData;
+  coverPageIntro?: string;
+  standardTerms?: StandardTermsSection[];
+}
 
 function RichText({ text }: { text: string }) {
   const parts = text.split("**");
@@ -60,7 +64,11 @@ function Attribution({ linkVersion }: { linkVersion?: boolean }) {
   );
 }
 
-export default function DocumentPreview({ data }: { data: NdaFormData }) {
+export default function DocumentPreview({
+  data,
+  coverPageIntro = "",
+  standardTerms = [],
+}: DocumentPreviewProps) {
   const party1 = displayValue(data.party1Name, "[Party 1]");
   const party2 = displayValue(data.party2Name, "[Party 2]");
 
@@ -83,7 +91,7 @@ export default function DocumentPreview({ data }: { data: NdaFormData }) {
         Using this Mutual Non-Disclosure Agreement
       </h2>
       <p className="mt-3">
-        <RichText text={COVER_PAGE_INTRO} />
+        <RichText text={coverPageIntro} />
       </p>
 
       <SectionHeading>Purpose</SectionHeading>
@@ -145,7 +153,7 @@ export default function DocumentPreview({ data }: { data: NdaFormData }) {
       <section className="print:break-before-page">
         <h2 className="mt-8 text-center text-xl font-bold">Standard Terms</h2>
         <ol className="mt-4 list-decimal space-y-4 pl-6">
-          {STANDARD_TERMS.map((section) => (
+          {standardTerms.map((section) => (
             <li key={section.heading} className="pl-2">
               <span className="font-bold">{section.heading}</span>.{" "}
               <RichText text={section.body} />

@@ -66,6 +66,10 @@ BACKEND_PORT=8001 FRONTEND_PORT=3100 ./scripts/start.sh  # macOS / Linux
 Unknown filenames return `404`. Only filenames present in `catalog.json`
 resolve; everything else is rejected.
 
+The frontend fetches template content from this API at runtime. Point it at a
+different backend with the `NEXT_PUBLIC_API_BASE_URL` environment variable
+(default: `http://localhost:8000`).
+
 ## Tests
 
 Backend:
