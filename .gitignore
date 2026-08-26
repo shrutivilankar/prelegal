@@ -10,8 +10,9 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# Python (scoped to repo root so frontend/lib stays tracked)
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -141,3 +142,12 @@ yarn-error.log*
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+.env
+
+# Runtime artifacts (start/stop scripts)
+*.db
+.run/
+
+# Agent tooling local dependencies
+.opencode/node_modules/
