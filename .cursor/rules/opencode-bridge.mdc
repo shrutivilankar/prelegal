@@ -1,0 +1,30 @@
+---
+description: Load OpenCode project skills, agents, and MCP alongside Cursor defaults
+alwaysApply: true
+---
+
+# OpenCode + Cursor bridge
+
+This project uses OpenCode and Cursor together.
+
+## Skills
+
+- Project skills: `.opencode/skills/` (synced to `.cursor/skills/opencode/` via `scripts/sync-opencode-to-cursor.ps1`)
+- Power-pack skills: synced to `.cursor/skills/opencode-power-pack/` when the sync script has been run
+- Re-run the sync script after OpenCode plugin updates or on a new machine
+
+## Agents
+
+Custom subagents live in `.cursor/agents/` (exported from OpenCode power-pack):
+
+- `code-explorer` — trace and explain existing features
+- `code-architect` — design implementation blueprints
+- `code-reviewer` — review changes for bugs, security, and conventions
+
+## MCP
+
+Atlassian/Jira MCP is configured in `.cursor/mcp.json` (mirrors `opencode.json`).
+
+## OpenCode config
+
+Root `opencode.json` is the single project config. Do not add a nested `.opencode/opencode.json`.

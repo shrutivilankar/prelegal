@@ -5,9 +5,19 @@
       "type": "remote",
       "url": "https://mcp.atlassian.com/v1/sse",
       "enabled": true
-    }    
+    },
+    "atlassian": {
+      "type": "remote",
+      "url": "https://mcp.atlassian.com/v1/sse",
+      "enabled": true
+    }
   },
   "plugin": [
     "opencode-power-pack@git+https://github.com/waybarrios/opencode-power-pack.git"
-  ]
+  ],
+  "skills": {
+    "paths": [
+      ".opencode/skills"
+    ]
+  }
 }

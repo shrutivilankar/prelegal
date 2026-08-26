@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "jira-old": {
+      "url": "https://mcp.atlassian.com/v1/sse"
+    },
+    "atlassian": {
+      "url": "https://mcp.atlassian.com/v1/sse"
+    }
+  }
+}

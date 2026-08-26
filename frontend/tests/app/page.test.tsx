@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { fetchTemplate } from "@/lib/api";
+import { fetchTemplate, sendChatMessage } from "@/lib/api";
 import Home from "@/app/page";
 import {
   MNDA_COVERPAGE_MARKDOWN,
@@ -19,6 +19,7 @@ vi.mock("@/lib/api", () => ({
         ? MNDA_COVERPAGE_MARKDOWN
         : MNDA_STANDARD_TERMS_MARKDOWN,
   })),
+  sendChatMessage: vi.fn(async () => ({ reply: "Thanks!", nda_fields: {} })),
 }));
 
 async function setup() {
@@ -26,6 +27,17 @@ async function setup() {
   const view = render(<Home />);
   const preview = await screen.findByRole("article");
   return { user, preview, ...view };
+}
+
+async function sendUserMessage(
+  user: ReturnType<typeof userEvent.setup>,
+  text: string,
+  response: { reply: string; nda_fields: Record<string, unknown> },
+) {
+  vi.mocked(sendChatMessage).mockResolvedValueOnce(response);
+  await user.type(screen.getByRole("textbox", { name: /message/i }), text);
+  await user.click(screen.getByRole("button", { name: /Send/i }));
+  await screen.findByText(response.reply);
 }
 
 describe("Mutual NDA creator page", () => {
@@ -47,11 +59,14 @@ describe("Mutual NDA creator page", () => {
     );
   });
 
-  it("renders the form and preview side by side", async () => {
+  it("renders the AI chat and preview side by side", async () => {
     await setup();
 
     expect(
-      screen.getByLabelText(/Party 1 Company Name/i),
+      screen.getByRole("textbox", { name: /message/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Which two companies are signing this agreement\?/i),
     ).toBeInTheDocument();
     expect(
       screen.getByText("Mutual Non-Disclosure Agreement"),
@@ -93,11 +108,13 @@ describe("Mutual NDA creator page", () => {
     expect(printSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("reflects typed party names into the document signature block", async () => {
+  it("reflects chat-provided party names into the document signature block", async () => {
     const { user, preview } = await setup();
 
-    await user.type(screen.getByLabelText(/Party 1 Company Name/i), "Acme Corp");
-    await user.type(screen.getByLabelText(/Party 2 Company Name/i), "Globex LLC");
+    await sendUserMessage(user, "Acme Corp and Globex LLC are signing.", {
+      reply: "Got it.",
+      nda_fields: { party1Name: "Acme Corp", party2Name: "Globex LLC" },
+    });
 
     const table = within(preview).getByRole("table");
     const companyRow = within(table)
@@ -111,28 +128,31 @@ describe("Mutual NDA creator page", () => {
     expect(within(companyRow!).queryByText("[Party 2]")).toBeNull();
   });
 
-  it("updates the MNDA term in the preview when the radio changes", async () => {
+  it("updates the MNDA term language from a chat response", async () => {
     const { user, preview } = await setup();
 
     expect(within(preview).getByText(/Expires 1 year from Effective Date\./))
       .toBeInTheDocument();
 
-    await user.click(
-      screen.getByRole("radio", { name: /Continues until terminated/i }),
-    );
+    await sendUserMessage(user, "It continues until terminated.", {
+      reply: "Noted.",
+      nda_fields: { mndaTerm: "until-terminated" },
+    });
 
     expect(
       within(preview).getByText(
         /Continues until terminated in accordance with the terms of the MNDA\./,
       ),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("MNDA term in years")).toBeDisabled();
   });
 
-  it("updates confidentiality language when perpetuity is selected", async () => {
+  it("updates confidentiality language when the chat confirms perpetuity", async () => {
     const { user, preview } = await setup();
 
-    await user.click(screen.getByRole("radio", { name: /In perpetuity/i }));
+    await sendUserMessage(user, "Protection should last forever.", {
+      reply: "Done.",
+      nda_fields: { confidentialityTerm: "perpetuity" },
+    });
 
     const heading = within(preview).getByRole("heading", {
       name: "Term of Confidentiality",
@@ -140,17 +160,17 @@ describe("Mutual NDA creator page", () => {
     expect(heading.nextElementSibling?.textContent).toContain("In perpetuity");
   });
 
-  it("formats the effective date live as the user picks one", async () => {
+  it("formats a chat-provided effective date in the preview", async () => {
     const { user, preview } = await setup();
 
     expect(within(preview).getByText("[Today's date]")).toBeInTheDocument();
 
-    await user.type(
-      screen.getByLabelText(/Effective Date/i),
-      "2026-12-01",
-    );
+    await sendUserMessage(user, "Start on December 1st, 2026.", {
+      reply: "Set.",
+      nda_fields: { effectiveDate: "2026-12-01" },
+    });
 
-    expect(within(preview).getByText(/December \d+, 2026/)).toBeInTheDocument();
+    expect(within(preview).getByText("December 1, 2026")).toBeInTheDocument();
   });
 
   it("keeps placeholders visible until fields are filled", async () => {
