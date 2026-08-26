@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { fetchTemplate, getApiBaseUrl } from "@/lib/api";
+import { fetchTemplate, fetchTemplates, getApiBaseUrl } from "@/lib/api";
 
 const API_BASE_ENV_VAR = "NEXT_PUBLIC_API_BASE_URL";
 
@@ -85,5 +85,46 @@ describe("fetchTemplate", () => {
     vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({}, 404)));
 
     await expect(fetchTemplate("nope.md")).rejects.toThrow(/404.*nope\.md/);
+  });
+});
+
+describe("fetchTemplates", () => {
+  const listResponse = {
+    templates: [
+      { name: "Service Level Agreement", description: "SLA terms", filename: "sla.md" },
+      { name: "Business Associate Agreement", description: "BAA terms", filename: "BAA.md" },
+    ],
+  };
+
+  it("requests the template list endpoint and returns the parsed templates", async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(listResponse));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchTemplates()).resolves.toEqual(listResponse.templates);
+
+    expect(fetchMock).toHaveBeenCalledWith("http://localhost:8000/api/templates");
+  });
+
+  it("uses the configured base URL", async () => {
+    process.env[API_BASE_ENV_VAR] = "https://api.example.com";
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse(listResponse)));
+
+    await fetchTemplates();
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      "https://api.example.com/api/templates",
+    );
+  });
+
+  it("throws when the response is not ok", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({}, 500)));
+
+    await expect(fetchTemplates()).rejects.toThrow(/status 500/);
+  });
+
+  it("returns an empty array when the catalog is empty", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ templates: [] })));
+
+    await expect(fetchTemplates()).resolves.toEqual([]);
   });
 });

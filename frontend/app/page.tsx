@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import DocumentPreview from "@/components/DocumentPreview";
 import NdaForm from "@/components/NdaForm";
 import type { NdaFormData, StandardTermsSection } from "@/lib/mnda";
@@ -60,13 +61,21 @@ export default function Home() {
           <p className="text-lg font-semibold text-neutral-900">Prelegal</p>
           <p className="text-xs text-neutral-500">Mutual NDA Creator</p>
         </div>
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
-          Download PDF
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/templates"
+            className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Browse Templates
+          </Link>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            Download PDF
+          </button>
+        </div>
       </header>
 
       <main className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[420px_1fr] print:block">

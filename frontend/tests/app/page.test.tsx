@@ -38,6 +38,15 @@ describe("Mutual NDA creator page", () => {
     ).toBeInTheDocument();
   });
 
+  it("links to the template catalog", async () => {
+    await setup();
+
+    expect(screen.getByRole("link", { name: /Browse Templates/i })).toHaveAttribute(
+      "href",
+      "/templates",
+    );
+  });
+
   it("renders the form and preview side by side", async () => {
     await setup();
 

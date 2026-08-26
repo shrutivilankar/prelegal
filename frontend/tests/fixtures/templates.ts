@@ -13,3 +13,22 @@ export const MNDA_STANDARD_TERMS_MARKDOWN = readFileSync(
   join(templatesDir, "Mutual-NDA.md"),
   "utf-8",
 );
+
+export const SLA_MARKDOWN = readFileSync(
+  join(templatesDir, "sla.md"),
+  "utf-8",
+);
+
+export const CATALOG_TEMPLATES = [
+  {
+    name: "Service Level Agreement",
+    description: "Common Paper Service Level Agreement defining target uptime.",
+    filename: "sla.md",
+  },
+  {
+    name: "Business Associate Agreement",
+    description:
+      "Common Paper standard Business Associate Agreement for HIPAA-covered arrangements.",
+    filename: "BAA.md",
+  },
+];
