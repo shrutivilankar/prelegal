@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { fetchTemplate, fetchTemplates, getApiBaseUrl } from "@/lib/api";
+import { fetchTemplate, fetchTemplates, getApiBaseUrl, sendChatMessage } from "@/lib/api";
 
 const API_BASE_ENV_VAR = "NEXT_PUBLIC_API_BASE_URL";
 
@@ -126,5 +126,59 @@ describe("fetchTemplates", () => {
     vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ templates: [] })));
 
     await expect(fetchTemplates()).resolves.toEqual([]);
+  });
+});
+
+describe("sendChatMessage", () => {
+  it("posts the conversation to the chat endpoint and returns the parsed body", async () => {
+    const body = { reply: "Got it.", nda_fields: { party1Name: "Acme Corp" } };
+    let capturedInit: RequestInit | undefined;
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      capturedInit = init;
+      return jsonResponse(body);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const messages = [
+      { role: "assistant", content: "Hello" },
+      { role: "user", content: "Acme Corp" },
+    ] as const;
+
+    await expect(sendChatMessage([...messages])).resolves.toEqual(body);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:8000/api/chat",
+      expect.objectContaining({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    expect(JSON.parse(String(capturedInit?.body))).toEqual({ messages });
+  });
+
+  it("uses the configured base URL", async () => {
+    process.env[API_BASE_ENV_VAR] = "https://api.example.com";
+    let capturedUrl = "";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        capturedUrl = url;
+        return jsonResponse({ reply: "", nda_fields: {} });
+      }),
+    );
+
+    await sendChatMessage([{ role: "user", content: "hi" }]);
+
+    expect(capturedUrl).toBe("https://api.example.com/api/chat");
+  });
+
+  it.each([
+    [503, /status 503/],
+    [502, /status 502/],
+  ])("throws when the response is not ok (%i)", async (status, pattern) => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({}, status)));
+
+    await expect(sendChatMessage([{ role: "user", content: "hi" }])).rejects.toThrow(
+      pattern,
+    );
   });
 });

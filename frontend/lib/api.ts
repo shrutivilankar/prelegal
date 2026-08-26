@@ -1,3 +1,5 @@
+import type { NdaFormData } from "@/lib/mnda";
+
 const DEFAULT_API_BASE_URL = "http://localhost:8000";
 
 export interface TemplateSummary {
@@ -37,4 +39,36 @@ export async function fetchTemplate(
     );
   }
   return (await response.json()) as TemplateDetail;
+}
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface ChatApiResponse {
+  reply: string;
+  nda_fields: Partial<NdaFormData>;
+}
+
+export class ChatRequestError extends Error {
+  constructor(readonly status: number) {
+    super(`Chat request failed with status ${status}`);
+    this.name = "ChatRequestError";
+  }
+}
+
+export async function sendChatMessage(
+  messages: ChatMessage[],
+): Promise<ChatApiResponse> {
+  const url = `${getApiBaseUrl()}/api/chat`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages }),
+  });
+  if (!response.ok) {
+    throw new ChatRequestError(response.status);
+  }
+  return (await response.json()) as ChatApiResponse;
 }

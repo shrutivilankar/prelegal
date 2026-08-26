@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import DocumentPreview from "@/components/DocumentPreview";
-import NdaForm from "@/components/NdaForm";
+import ChatPanel from "@/components/ChatPanel";
 import type { NdaFormData, StandardTermsSection } from "@/lib/mnda";
 import {
   MNDA_COVERPAGE_FILENAME,
@@ -80,7 +80,7 @@ export default function Home() {
 
       <main className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[420px_1fr] print:block">
         <aside className="min-h-0 overflow-y-auto border-r border-neutral-200 bg-neutral-50 p-6 lg:p-8 print:hidden">
-          <NdaForm data={formData} onChange={updateForm} />
+          <ChatPanel onFields={updateForm} />
         </aside>
 
         <section className="min-h-0 overflow-y-auto bg-neutral-300 p-6 lg:p-10 print:overflow-visible print:p-0">

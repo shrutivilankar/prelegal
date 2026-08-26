@@ -151,3 +151,7 @@ yarn-error.log*
 
 # Agent tooling local dependencies
 .opencode/node_modules/
+
+# Cursor skill junctions (created by scripts/sync-opencode-to-cursor.ps1)
+.cursor/skills/opencode
+.cursor/skills/opencode-power-pack

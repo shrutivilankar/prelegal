@@ -62,6 +62,7 @@ BACKEND_PORT=8001 FRONTEND_PORT=3100 ./scripts/start.sh  # macOS / Linux
 | GET    | `/api/health`               | Liveness check including database status     |
 | GET    | `/api/templates`            | List all templates from the catalog          |
 | GET    | `/api/templates/{filename}` | Template metadata plus full markdown content |
+| POST   | `/api/chat`                 | Conversational NDA intake; extracts fields   |
 
 Unknown filenames return `404`. Only filenames present in `catalog.json`
 resolve; everything else is rejected.
@@ -69,6 +70,20 @@ resolve; everything else is rejected.
 The frontend fetches template content from this API at runtime. Point it at a
 different backend with the `NEXT_PUBLIC_API_BASE_URL` environment variable
 (default: `http://localhost:8000`).
+
+## AI chat configuration
+
+The Mutual NDA creator uses a freeform AI chat instead of a form. The backend
+routes chat through LiteLLM → OpenRouter → Cerebras. To enable it, create a
+`.env` file at the repository root containing:
+
+```
+OPENROUTER_API_KEY=<your key>
+```
+
+The backend loads `.env` automatically on startup (real environment variables
+take precedence). Without the key, `/api/chat` returns `503`; everything else
+keeps working.
 
 ## Tests
 

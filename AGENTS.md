@@ -2,6 +2,15 @@
 
 1. Be simple, design simple and then build on top of it in iterative manner
 2. Provide concise and clear simple answers or logs or outputs.
-3. Suggest speed, performance, and quality recommendations when you see the opportunity
-4. Suggest when you think is the right moment for checkpointing and creating new session to avoid context saturation. Request user permission, trigger question.asked event
+<!--3. Suggest speed, performance, and quality recommendations when you see the opportunity
+ 4. Suggest when you think is the right moment for checkpointing and creating new session to avoid context saturation. Request user permission, trigger question.asked event -->
 5. when asking questions always trigger question.asked event
+6. For this project continue without asking any questions. Let the agent decide the most recommended when there are questions. Log them on the AGENTS.md for record.
+7. Continue all phases without pausing
+
+## Decisions
+
+- **2026-08-26 — PL-12 Phase 7 close-out**: Re-verified the final tree before summarizing: backend `pytest` 42 passed (19 in the new `tests/test_chat.py`), frontend `vitest` 136 passed across 9 files. Backend tests require the repo-root `.venv` interpreter; the bare `python` on PATH has no pytest installed. `NdaForm.tsx` and its test are deleted with no orphan references left — `NdaFormData` in `lib/mnda.ts` survives as the shared document shape. Did not transition PL-12 in Jira: the feature-dev workflow ends at the summary and the user did not ask for a status change, so that stays an explicit follow-up.
+- **2026-08-26 — PL-12 Phase 6 review scope**: Ran two `code-reviewer` passes instead of the skill's three (correctness+security, and conventions+simplicity merged). At ~350 changed lines across 9 files, three reviewers read the same files and the simplicity/conventions passes overlap. Added test and typecheck verification, which the skill omits. Final state: backend `pytest` 42 passed (from 34), frontend `vitest` 136 passed (from 132), `tsc --noEmit` clean. No linter is configured in this repo. Declined one convention suggestion: `tests/test_chat.py` keeps its class grouping rather than flattening to module-level functions like the other backend test modules — the file is internally consistent and the rewrite is mechanical churn with breakage risk for stylistic gain.
+- **2026-08-26 — PL-12 deferred: `/api/chat` has no auth or rate limiting**: The endpoint is an unauthenticated proxy to a paid LLM, so a deployed instance could be drained by anyone (CORS is browser-only and does not prevent this). Bounded the blast radius with `max_tokens` and the existing `ChatRequest` size caps, but deliberately did not add auth or a rate limiter: that is deployment infrastructure beyond PL-12, and the app is currently a localhost dev tool. **Must be addressed before any public deployment.** Related: `create_chat_reply` is a sync `def`, so concurrent chats occupy Starlette's bounded threadpool for up to 60s and can stall `/api/health` and `/api/templates`.
+- **2026-08-26 — OpenCode + Cursor bridge**: Consolidated to root `opencode.json`; removed nested `.opencode/opencode.json` (invalid `list` plugin). Added `.cursor/mcp.json`, `.cursor/agents/` (code-explorer, code-architect, code-reviewer), and `scripts/sync-opencode-to-cursor.ps1` to junction project skills and opencode-power-pack skills into `.cursor/skills/`. Run the sync script after plugin cache changes.
