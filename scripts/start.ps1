@@ -97,6 +97,8 @@ foreach ($service in @(
 }
 
 # --- Start backend ---
+# The browser's origin is the frontend port, so CORS has to follow it.
+$env:PRELEGAL_ALLOWED_ORIGINS = "http://localhost:$FrontendPort,http://127.0.0.1:$FrontendPort"
 Write-Output "Starting backend on http://127.0.0.1:$BackendPort ..."
 $backendProc = Start-Process -FilePath $venvPython `
   -ArgumentList "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "$BackendPort" `

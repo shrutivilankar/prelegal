@@ -1,0 +1,53 @@
+name: prelegal
+
+services:
+  backend:
+    image: prelegal-backend:latest
+    build:
+      context: ../..
+      dockerfile: scripts/docker/Dockerfile.backend
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    # Supplies OPENROUTER_API_KEY for /api/chat. Without it the app still runs
+    # and /api/chat returns 503.
+    env_file:
+      - path: ../../.env
+        required: false
+    environment:
+      # The browser's origin is the host-published frontend port.
+      PRELEGAL_ALLOWED_ORIGINS: http://localhost:${FRONTEND_PORT:-3001},http://127.0.0.1:${FRONTEND_PORT:-3001}
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - 'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8000/api/health", timeout=2)'
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  frontend:
+    image: prelegal-frontend:latest
+    build:
+      context: ../..
+      dockerfile: scripts/docker/Dockerfile.frontend
+      args:
+        # The browser calls the backend directly, so this points at the host's
+        # published backend port, not the compose service name.
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:${BACKEND_PORT:-8000}}
+    ports:
+      - "${FRONTEND_PORT:-3001}:3001"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - 'fetch("http://127.0.0.1:3001").then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))'
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    restart: unless-stopped

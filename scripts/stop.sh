@@ -4,6 +4,13 @@
 
 set -u
 
+case "$(uname -s 2>/dev/null || true)" in
+  MINGW* | MSYS* | CYGWIN*)
+    echo "On Windows run instead: powershell -File scripts\\stop.ps1" >&2
+    exit 1
+    ;;
+esac
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUN_DIR="$ROOT/.run"
 
