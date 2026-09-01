@@ -1,0 +1,16 @@
+# Build context is the repository root; keep only what the backend image needs.
+.git
+.github
+.run
+.venv
+.cursor
+.opencode
+frontend
+scripts
+backend/tests
+backend/data
+backend/pytest.ini
+**/__pycache__
+**/.pytest_cache
+.env
+*.pdf

@@ -5,6 +5,15 @@
 
 set -euo pipefail
 
+case "$(uname -s 2>/dev/null || true)" in
+  MINGW* | MSYS* | CYGWIN*)
+    echo "This script needs a POSIX environment; Git Bash lacks lsof and uses a" >&2
+    echo "Windows-layout .venv. On Windows run instead:" >&2
+    echo "  powershell -ExecutionPolicy Bypass -File scripts\\start.ps1" >&2
+    exit 1
+    ;;
+esac
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUN_DIR="$ROOT/.run"
 mkdir -p "$RUN_DIR"
@@ -52,6 +61,8 @@ for port in "$BACKEND_PORT" "$FRONTEND_PORT"; do
 done
 
 # --- Start backend ---
+# The browser's origin is the frontend port, so CORS has to follow it.
+export PRELEGAL_ALLOWED_ORIGINS="http://localhost:$FRONTEND_PORT,http://127.0.0.1:$FRONTEND_PORT"
 echo "Starting backend on http://127.0.0.1:$BACKEND_PORT ..."
 (cd "$ROOT/backend" && nohup "$VPY" -m uvicorn app.main:app --host 127.0.0.1 --port "$BACKEND_PORT" \
   >"$RUN_DIR/backend.log" 2>&1 & echo $! >"$RUN_DIR/backend.pid")

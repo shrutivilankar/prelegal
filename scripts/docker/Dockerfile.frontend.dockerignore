@@ -1,0 +1,16 @@
+# Build context is the repository root; keep only what the frontend image needs.
+.git
+.github
+.run
+.venv
+.cursor
+.opencode
+backend
+templates
+scripts
+frontend/node_modules
+frontend/.next
+frontend/tests
+frontend/tsconfig.tsbuildinfo
+.env
+*.pdf
